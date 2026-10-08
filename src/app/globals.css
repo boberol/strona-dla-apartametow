@@ -1,0 +1,522 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-inter), "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body {
+  padding: 0;
+  margin: 0;
+}
+
+/* ---------------------------------------------------------------- */
+/* Guest app                                                         */
+/*                                                                   */
+/* Everything below reads from CSS custom properties set per site by */
+/* themeToCssVars(), so a theme change never requires a re-render.   */
+/* ---------------------------------------------------------------- */
+
+.gg-root {
+  font-family: var(--font-body);
+  min-height: 100svh;
+  background-color: var(--bg-color);
+  position: relative;
+  isolation: isolate;
+}
+
+.gg-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  object-fit: cover;
+  width: 100%;
+  height: 100%;
+}
+
+.gg-bg-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: rgb(0 0 0 / var(--overlay));
+}
+
+.gg-tile {
+  background: var(--tile-bg);
+  color: var(--tile-text);
+  border-radius: var(--radius);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.gg-tile:active {
+  transform: scale(0.97);
+}
+
+.gg-tile--glass {
+  background: color-mix(in srgb, var(--tile-bg) 55%, transparent);
+  backdrop-filter: blur(12px);
+  border: 1px solid color-mix(in srgb, var(--tile-text) 12%, transparent);
+}
+
+.gg-tile--outline {
+  background: transparent;
+  border: 1.5px solid var(--tile-bg);
+  color: var(--tile-bg);
+}
+
+.gg-card {
+  background: var(--card-bg);
+  color: var(--card-text);
+}
+
+.gg-rich p {
+  margin: 0 0 0.9rem;
+  line-height: 1.65;
+}
+
+.gg-rich p:last-child {
+  margin-bottom: 0;
+}
+
+.gg-rich ul {
+  margin: 0 0 0.9rem;
+  padding-left: 1.15rem;
+  list-style: disc;
+  line-height: 1.65;
+}
+
+.gg-rich li {
+  margin-bottom: 0.35rem;
+}
+
+.gg-link {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Respect a guest's reduced-motion preference. */
+@media (prefers-reduced-motion: reduce) {
+  .gg-tile {
+    transition: none;
+  }
+  .gg-tile:active {
+    transform: none;
+  }
+}
+
+.gg-bg-fallback {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background:
+    radial-gradient(120% 80% at 50% 0%, color-mix(in srgb, var(--brand) 55%, transparent), transparent 70%),
+    linear-gradient(180deg, color-mix(in srgb, var(--bg-color) 80%, #000), var(--bg-color));
+}
+
+/* ---------------------------------------------------------------- */
+/* Partner panel                                                     */
+/*                                                                   */
+/* Marketing, auth, onboarding, dashboard and editor. Light and dark */
+/* palettes of the same navy-and-green brand. `.panel` sits on the   */
+/* <html> of the /[locale] branch only, so guest sites -- themed by  */
+/* their own owner -- are never affected by it.                      */
+/*                                                                   */
+/* Theme resolution: an explicit data-theme="light|dark" (from the   */
+/* sg_theme cookie, set by ThemeToggle) wins; otherwise the OS       */
+/* preference decides. No script runs before paint, so no flash.     */
+/* ---------------------------------------------------------------- */
+
+.panel {
+  --p-bg: #f6f7f9;
+  --p-surface: #ffffff;
+  --p-surface-2: #f0f2f5;
+  --p-border: rgb(15 23 42 / 0.09);
+  --p-border-strong: rgb(15 23 42 / 0.18);
+  --p-text: #0f172a;
+  --p-muted: #5b6477;
+  --p-subtle: #8a93a5;
+  --p-hover: rgb(15 23 42 / 0.05);
+  --p-input-bg: #ffffff;
+
+  --p-accent: #15803d;
+  --p-accent-hover: #166534;
+  --p-on-accent: #ffffff;
+  --p-accent-text: #15803d;
+  --p-accent-soft: rgb(22 163 74 / 0.1);
+
+  --p-warn-text: #b45309;
+  --p-warn-soft: rgb(245 158 11 / 0.14);
+  --p-danger-text: #dc2626;
+  --p-danger-soft: rgb(220 38 38 / 0.08);
+
+  --p-shadow: 0 1px 2px rgb(15 23 42 / 0.04), 0 2px 8px -2px rgb(15 23 42 / 0.06);
+  --p-phone-shadow: 0 30px 60px -24px rgb(15 23 42 / 0.35);
+
+  color-scheme: light;
+  background: var(--p-bg);
+  color: var(--p-text);
+}
+
+/* The dark palette, applied either by OS preference or by explicit choice. */
+@media (prefers-color-scheme: dark) {
+  .panel:not([data-theme="light"]) {
+    --p-bg: #080c15;
+    --p-surface: #111827;
+    --p-surface-2: #172033;
+    --p-border: rgb(255 255 255 / 0.08);
+    --p-border-strong: rgb(255 255 255 / 0.16);
+    --p-text: #e8edf7;
+    --p-muted: #8c97ad;
+    --p-subtle: #5d6880;
+    --p-hover: rgb(255 255 255 / 0.06);
+    --p-input-bg: #0c1220;
+
+    --p-accent: #22c55e;
+    --p-accent-hover: #2ad169;
+    --p-on-accent: #04120a;
+    --p-accent-text: #34d170;
+    --p-accent-soft: rgb(34 197 94 / 0.12);
+
+    --p-warn-text: #fcd34d;
+    --p-warn-soft: rgb(245 158 11 / 0.14);
+    --p-danger-text: #f87171;
+    --p-danger-soft: rgb(248 113 113 / 0.1);
+
+    --p-shadow: none;
+    --p-phone-shadow: 0 30px 80px -20px rgb(0 0 0 / 0.8);
+
+    color-scheme: dark;
+  }
+}
+
+.panel[data-theme="dark"] {
+  --p-bg: #080c15;
+  --p-surface: #111827;
+  --p-surface-2: #172033;
+  --p-border: rgb(255 255 255 / 0.08);
+  --p-border-strong: rgb(255 255 255 / 0.16);
+  --p-text: #e8edf7;
+  --p-muted: #8c97ad;
+  --p-subtle: #5d6880;
+  --p-hover: rgb(255 255 255 / 0.06);
+  --p-input-bg: #0c1220;
+
+  --p-accent: #22c55e;
+  --p-accent-hover: #2ad169;
+  --p-on-accent: #04120a;
+  --p-accent-text: #34d170;
+  --p-accent-soft: rgb(34 197 94 / 0.12);
+
+  --p-warn-text: #fcd34d;
+  --p-warn-soft: rgb(245 158 11 / 0.14);
+  --p-danger-text: #f87171;
+  --p-danger-soft: rgb(248 113 113 / 0.1);
+
+  --p-shadow: none;
+  --p-phone-shadow: 0 30px 80px -20px rgb(0 0 0 / 0.8);
+
+  color-scheme: dark;
+}
+
+/* The toggle shows a moon in light mode and a sun in dark mode. */
+.panel .theme-icon-sun {
+  display: none;
+}
+@media (prefers-color-scheme: dark) {
+  .panel:not([data-theme="light"]) .theme-icon-sun {
+    display: block;
+  }
+  .panel:not([data-theme="light"]) .theme-icon-moon {
+    display: none;
+  }
+}
+.panel[data-theme="dark"] .theme-icon-sun {
+  display: block;
+}
+.panel[data-theme="dark"] .theme-icon-moon {
+  display: none;
+}
+
+.panel :focus-visible {
+  outline: 2px solid var(--p-accent);
+  outline-offset: 2px;
+}
+
+.panel ::selection {
+  background: var(--p-accent-soft);
+}
+
+/* ---- Building blocks -------------------------------------------- */
+/* In the components layer so Tailwind utilities on the same element  */
+/* (hidden, flex, padding...) can still override them.                */
+
+@layer components {
+  .panel-surface {
+    background: var(--p-surface);
+    border: 1px solid var(--p-border);
+    border-radius: 14px;
+    box-shadow: var(--p-shadow);
+  }
+
+  .panel-muted {
+    color: var(--p-muted);
+  }
+
+  .panel-link {
+    color: var(--p-accent-text);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  /* Radio-style selectable card, as used by the template picker. */
+  .panel-option {
+    background: var(--p-surface);
+    border: 1px solid var(--p-border);
+    border-radius: 12px;
+    transition: border-color 0.15s ease, background 0.15s ease;
+    text-align: left;
+    width: 100%;
+  }
+
+  .panel-option:hover {
+    border-color: var(--p-border-strong);
+  }
+
+  .panel-option[data-selected="true"] {
+    border-color: var(--p-accent);
+    background: linear-gradient(0deg, var(--p-accent-soft), var(--p-accent-soft)), var(--p-surface);
+  }
+
+  .panel-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    background: var(--p-accent);
+    color: var(--p-on-accent);
+    border-radius: 10px;
+    font-weight: 600;
+    transition: background 0.15s ease, opacity 0.15s ease;
+  }
+
+  .panel-btn:hover:not(:disabled) {
+    background: var(--p-accent-hover);
+  }
+
+  .panel-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  .panel-btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    background: transparent;
+    color: var(--p-text);
+    border: 1px solid var(--p-border-strong);
+    border-radius: 10px;
+    font-weight: 500;
+    transition: background 0.15s ease;
+  }
+
+  .panel-btn-ghost:hover:not(:disabled) {
+    background: var(--p-hover);
+  }
+
+  .panel-btn-ghost:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  /* Irreversible actions only (delete an apartment, delete the account). */
+  .panel-btn-danger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    background: #dc2626;
+    color: #fff;
+    border-radius: 10px;
+    font-weight: 600;
+    transition: background 0.15s ease, opacity 0.15s ease;
+  }
+
+  .panel-btn-danger:hover:not(:disabled) {
+    background: #b91c1c;
+  }
+
+  .panel-btn-danger:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  /* Square, borderless icon button used in toolbars. */
+  .panel-icon-btn {
+    display: inline-grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 8px;
+    color: var(--p-muted);
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+
+  .panel-icon-btn:hover:not(:disabled) {
+    background: var(--p-hover);
+    color: var(--p-text);
+  }
+
+  .panel-icon-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  .panel-input {
+    background: var(--p-input-bg);
+    border: 1px solid var(--p-border-strong);
+    border-radius: 10px;
+    color: var(--p-text);
+    width: 100%;
+    padding: 0.55rem 0.75rem;
+    font-size: 0.875rem;
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .panel-input:focus {
+    border-color: var(--p-accent);
+    box-shadow: 0 0 0 3px var(--p-accent-soft);
+  }
+
+  .panel-input::placeholder {
+    color: var(--p-subtle);
+  }
+
+  .panel-label {
+    display: block;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--p-text);
+  }
+
+  /* Pill-shaped segmented control (billing interval, editor tabs). */
+  .panel-segment {
+    display: inline-flex;
+    padding: 3px;
+    border-radius: 999px;
+    background: var(--p-surface-2);
+  }
+
+  .panel-segment > :is(button, a) {
+    border-radius: 999px;
+    padding: 0.3rem 0.85rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--p-muted);
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+
+  .panel-segment > :is(button, a):hover {
+    color: var(--p-text);
+  }
+
+  .panel-segment > [aria-pressed="true"],
+  .panel-segment > [aria-current="page"] {
+    background: var(--p-surface);
+    color: var(--p-text);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.08), 0 0 0 1px var(--p-border);
+  }
+
+  /* Small status pill. */
+  .panel-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    border-radius: 999px;
+    padding: 0.15rem 0.55rem;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    white-space: nowrap;
+    background: var(--p-surface-2);
+    color: var(--p-muted);
+  }
+
+  .panel-chip[data-tone="accent"] {
+    background: var(--p-accent-soft);
+    color: var(--p-accent-text);
+  }
+
+  .panel-chip[data-tone="warn"] {
+    background: var(--p-warn-soft);
+    color: var(--p-warn-text);
+  }
+
+  /* Collapsible group in the editor side panels. */
+  .panel-disclosure > summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    cursor: pointer;
+    list-style: none;
+    padding: 0.6rem 0;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--p-text);
+  }
+
+  .panel-disclosure > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .panel-disclosure > summary::after {
+    content: "";
+    width: 0.45rem;
+    height: 0.45rem;
+    border-right: 1.5px solid var(--p-muted);
+    border-bottom: 1.5px solid var(--p-muted);
+    transform: rotate(45deg) translateY(-2px);
+    transition: transform 0.15s ease;
+  }
+
+  .panel-disclosure[open] > summary::after {
+    transform: rotate(-135deg) translateY(-1px);
+  }
+
+  /* Phone frame used by the marketing hero, onboarding preview and editor. */
+  .panel-phone {
+    border: 9px solid #05080f;
+    border-radius: 2.4rem;
+    background: #000;
+    overflow: hidden;
+    box-shadow: var(--p-phone-shadow);
+  }
+}
+
+/* ---- Printable QR card ------------------------------------------ */
+
+@media print {
+  @page {
+    margin: 12mm;
+  }
+
+  .panel {
+    background: #fff;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .print-card {
+    box-shadow: none !important;
+    break-inside: avoid;
+  }
+}

@@ -1,0 +1,186 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+/// An apartment owner.
+model User {
+  id           String  @id @default(cuid())
+  email        String  @unique
+  /// scrypt, as "scrypt$N$r$p$salt$hash". Never a plaintext password.
+  passwordHash String
+  name         String?
+  /// Platform operator: can open /admin. Granted with `npm run admin -- grant`.
+  isAdmin      Boolean @default(false)
+  /// UI language last used, so emails arrive in a language the owner reads.
+  locale       String  @default("en")
+
+  createdAt DateTime @default(now())
+
+  sessions       Session[]
+  memberships    Membership[]
+  ownedOrgs      Organization[]  @relation("OrgOwner")
+  passwordResets PasswordReset[]
+}
+
+/// One-time password reset link. Only the sha256 of the token is stored.
+model PasswordReset {
+  id        String    @id @default(cuid())
+  tokenHash String    @unique
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+/// Database-backed session so a sign-in can be revoked server side.
+model Session {
+  id String @id @default(cuid())
+
+  /// sha256 of the cookie value: a leaked database cannot be used to sign in.
+  tokenHash String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+/// Billing lives here, not on the user: one account can hold several apartments.
+model Organization {
+  id      String @id @default(cuid())
+  name    String
+  ownerId String
+  owner   User   @relation("OrgOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  /// null until a plan is chosen. "one" | "complex" | "pro".
+  plan String?
+  /// "trialing" | "active" | "past_due" | "canceled" | "prepaid"
+  /// "prepaid" is a one-off payment (BLIK / Przelewy24 / card) that covers
+  /// access until currentPeriodEnd and does not renew by itself.
+  status String @default("trialing")
+
+  trialEndsAt      DateTime?
+  currentPeriodEnd DateTime?
+
+  /// Mirrored from Stripe webhooks. Absent while running in simulated mode.
+  stripeCustomerId     String? @unique
+  stripeSubscriptionId String? @unique
+  /// "monthly" | "yearly"
+  billingInterval      String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  memberships Membership[]
+  properties  Property[]
+  payments    Payment[]
+
+  @@index([ownerId])
+}
+
+model Membership {
+  id     String @id @default(cuid())
+  userId String
+  orgId  String
+  /// "owner" | "member"
+  role   String @default("owner")
+
+  user User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  org  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, orgId])
+  @@index([orgId])
+}
+
+/// One apartment / guest site.
+///
+/// `draft` and `published` each hold a complete SiteDoc as JSON text. Text
+/// rather than a native JSON column on purpose: we validate every read through
+/// zod and never query inside the document, so this behaves identically on
+/// SQLite (local dev) and Postgres (production).
+model Property {
+  id    String       @id @default(cuid())
+  orgId String
+  org   Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  slug String @unique
+  name String
+
+  /// Stable code embedded in the printed QR. Never changes, so a reprint is
+  /// never needed when the slug or domain changes.
+  shortCode String @unique
+
+  draft       String
+  published   String?
+  publishedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  versions SiteVersion[]
+  issues   IssueReport[]
+
+  @@index([orgId])
+}
+
+/// Snapshot written on every publish, so a bad publish can be rolled back.
+model SiteVersion {
+  id         String   @id @default(cuid())
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  doc        String
+  createdAt  DateTime @default(now())
+
+  @@index([propertyId, createdAt])
+}
+
+/// Damage / issue reported by a guest.
+model IssueReport {
+  id          String   @id @default(cuid())
+  propertyId  String
+  property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  description String
+  /// JSON array of uploaded photo URLs (SQLite has no native string array).
+  photoUrls   String   @default("[]")
+  /// Language the guest was browsing in, so the owner knows how to reply.
+  locale      String   @default("en")
+  status      String   @default("new")
+  createdAt   DateTime @default(now())
+
+  @@index([propertyId, status, createdAt])
+}
+
+/// A payment that reached us: a paid subscription invoice or a one-off prepaid
+/// year. externalId is the Stripe invoice / checkout session id, unique so a
+/// webhook Stripe delivers twice is recorded (and granted) once.
+model Payment {
+  id    String       @id @default(cuid())
+  orgId String
+  org   Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  externalId String  @unique
+  /// "subscription" | "prepaid"
+  kind       String
+  plan       String
+  /// "monthly" | "yearly"
+  interval   String
+  /// Amount actually charged, in minor units (grosze).
+  amount     Int
+  currency   String  @default("pln")
+  /// "card" | "blik" | "p24" | "simulated" | null when Stripe did not say.
+  method     String?
+  receiptUrl String?
+
+  createdAt DateTime @default(now())
+
+  @@index([orgId, createdAt])
+}
